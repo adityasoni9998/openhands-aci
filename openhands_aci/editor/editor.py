@@ -7,7 +7,7 @@ from typing import Literal, get_args
 
 from binaryornot.check import is_binary
 
-from openhands_aci.editor.mdconvert import MarkdownConverter  # type: ignore
+# from openhands_aci.editor.mdconvert import MarkdownConverter  # type: ignore
 from openhands_aci.linter import DefaultLinter
 from openhands_aci.utils.shell import run_shell_cmd
 
@@ -59,7 +59,7 @@ class OHEditor:
         self._max_file_size = (
             (max_file_size_mb or self.MAX_FILE_SIZE_MB) * 1024 * 1024
         )  # Convert to bytes
-        self.markdown_converter = MarkdownConverter()
+        # self.markdown_converter = MarkdownConverter()
 
     def __call__(
         self,
@@ -248,14 +248,14 @@ class OHEditor:
             )
 
         # Validate file and count lines
-        # self.validate_file(path)
+        self.validate_file(path)
         # num_lines = self._count_lines(path)
 
         start_line = 1
         # TODO: ignore view range option as of now
         if True:
             try:
-                file_content = self.read_file_markdown(path)
+                file_content = self.read_file(path)
                 return CLIResult(
                     output=self._make_output(file_content, str(path), start_line),
                     path=str(path),
@@ -296,12 +296,12 @@ class OHEditor:
         # if end_line == -1:
         #     end_line = num_lines
 
-        # file_content = self.read_file(path, start_line=start_line, end_line=end_line)
-        # return CLIResult(
-        #     path=str(path),
-        #     output=self._make_output(file_content, str(path), start_line),
-        #     prev_exist=True,
-        # )
+        file_content = self.read_file(path, start_line=start_line, end_line=end_line)
+        return CLIResult(
+            path=str(path),
+            output=self._make_output(file_content, str(path), start_line),
+            prev_exist=True,
+        )
 
     def write_file(self, path: Path, file_text: str) -> None:
         """
@@ -489,7 +489,7 @@ class OHEditor:
             start_line: Optional start line number (1-based). If provided with end_line, only reads that range.
             end_line: Optional end line number (1-based). Must be provided with start_line.
         """
-        # self.validate_file(path)
+        self.validate_file(path)
         try:
             if start_line is not None and end_line is not None:
                 # Read only the specified line range
@@ -511,13 +511,6 @@ class OHEditor:
                     return ''.join(f)
         except Exception as e:
             raise ToolError(f'Ran into {e} while trying to read {path}') from None
-
-    def read_file_markdown(self, path: Path) -> str:
-        try:
-            result = self.markdown_converter.convert(str(path))
-            return result.text_content
-        except Exception as e:
-            raise ToolError(f'Error in converting file to Markdown: {str(e)}')
 
     def _make_output(
         self,
@@ -542,7 +535,7 @@ class OHEditor:
             ]
         )
         return (
-            f"Here's the content of the file {snippet_description} displayed in Markdown format:\n"
+            f"Here's the result of running `cat -n` on {snippet_description}:\n"
             + snippet_content
             + '\n'
         )
